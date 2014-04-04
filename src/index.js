@@ -19,7 +19,7 @@ module.exports = function(name, options) {
     var buffers;
     if(!combined) {
       combined = new gutil.File({
-        path: path.join(path.dirname(file.path), name || path.basename(file.path)),
+        path: path.join(file.base, name || path.basename(file.path)),
         base: file.base,
         cwd: file.cwd,
         contents: new Buffer('')
