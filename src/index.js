@@ -26,7 +26,7 @@ module.exports = function(name, options) {
       });
       buffers = [combined.contents];
     } else {
-      buffers = [combined.contents, new Buffer(options.separator || require('os').EOL)];
+      buffers = [combined.contents, new Buffer(options.separator || require('os').EOL)];
     }
 
     var contents = file.contents;
