@@ -33,9 +33,9 @@
   },
   "dependencies": {
     "chalk": "^0.4.0",
-    "gulp-util": "~2.2.14",
+    "gulp-util": "~2.2.17",
     "lodash.assign": "^2.4.1",
-    "through2": "^0.4.1"
+    "through2": "^0.5.1"
   },
   "devDependencies": {
     "mocha": "*",
