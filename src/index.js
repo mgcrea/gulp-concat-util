@@ -30,9 +30,7 @@ module.exports = function(name, options) {
     }
 
     var contents = file.contents;
-    if(options.process === false) {
-      return next();
-    } else if(typeof options.process === 'function') {
+    if(typeof options.process === 'function') {
       contents = new Buffer(options.process.call(file, contents.toString()));
     } else if(typeof options.process === 'object')  {
       contents = new Buffer(gutil.template(contents, extend({file: file}, options.process)));
