@@ -14,12 +14,29 @@ module.exports = function(name, options) {
 
   var combined;
 
+  function parsePath(p) {
+    var extname = path.extname(p);
+    return {
+      dirname: path.dirname(p),
+      basename: path.basename(p, extname),
+      extname: extname,
+      sep: path.sep
+    };
+  }
+
   function combine(file, encoding, next) {
+
+    var filePath = name || path.basename(file.path);
+    if(typeof name === 'function') {
+      var parsedPath = parsePath(file.path);
+      var result = name(parsedPath) || parsedPath;
+      filePath = typeof result === 'string' ? result : result.basename + result.extname;
+    }
 
     var buffers;
     if(!combined) {
       combined = new gutil.File({
-        path: path.join(file.base, name || path.basename(file.path)),
+        path: path.join(file.base, filePath),
         base: file.base,
         cwd: file.cwd,
         contents: new Buffer('')

@@ -20,7 +20,7 @@ describe('gulp-concat-util', function() {
 
   describe('header()', function() {
 
-    it('file should pass through', function(done) {
+    it('should pass through files', function(done) {
 
       var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
 
@@ -40,7 +40,7 @@ describe('gulp-concat-util', function() {
 
     });
 
-    it('file should prepend templated content', function(done) {
+    it('should prepend templated content to file', function(done) {
 
       var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
 
@@ -64,7 +64,7 @@ describe('gulp-concat-util', function() {
 
   describe('footer()', function() {
 
-    it('file should pass through', function(done) {
+    it('should pass through files', function(done) {
 
       var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
 
@@ -84,7 +84,7 @@ describe('gulp-concat-util', function() {
 
     });
 
-    it('file should prepend templated content', function(done) {
+    it('should prepend templated content to file', function(done) {
 
       var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
 
@@ -108,7 +108,7 @@ describe('gulp-concat-util', function() {
 
   describe('concat()', function() {
 
-    it('file should pass through', function(done) {
+    it('should pass through files', function(done) {
 
       var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
 
@@ -128,7 +128,7 @@ describe('gulp-concat-util', function() {
 
     });
 
-    it('file should prepend templated content', function(done) {
+    it('should concat file contents', function(done) {
 
       var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
       var fixture2 = new File(extend({contents: new Buffer('bar();')}, defaults));
@@ -142,6 +142,33 @@ describe('gulp-concat-util', function() {
         should.equal(newFile.contents.toString(), 'foo();' + require('os').EOL + 'bar();');
         newFile.path.should.equal('/tmp/test/fixture/baz.js');
         newFile.relative.should.equal('baz.js');
+      });
+      stream.once('end', done);
+      stream.write(fixture);
+      stream.write(fixture2);
+      stream.end();
+
+    });
+
+    it('should support name as a function', function(done) {
+
+      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
+      var fixture2 = new File(extend({contents: new Buffer('bar();')}, defaults));
+
+      var stream = concat(function(path) {
+        should.exist(path.basename);
+        should.exist(path.dirname);
+        should.exist(path.extname);
+        path.basename = 'qux';
+      });
+      stream.on('data', function(newFile){
+        should.exist(newFile);
+        should.exist(newFile.path);
+        should.exist(newFile.relative);
+        should.exist(newFile.contents);
+        should.equal(newFile.contents.toString(), 'foo();' + require('os').EOL + 'bar();');
+        newFile.path.should.equal('/tmp/test/fixture/qux.js');
+        newFile.relative.should.equal('qux.js');
       });
       stream.once('end', done);
       stream.write(fixture);
