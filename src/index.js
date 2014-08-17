@@ -8,11 +8,17 @@ var gutil = require('gulp-util');
 var extend = require('lodash.assign');
 var through = require('through2');
 var PluginError = gutil.PluginError;
+var Concat = require('concat-with-sourcemaps');
 
-module.exports = function(name, options) {
-  options = options || {};
+var defaults = {
+  sep: require('os').EOL,
+  process: false
+};
 
-  var combined;
+module.exports = function(name, config) {
+
+  var options = extend({}, defaults, config || {});
+  var concat, firstFile, fileName;
 
   function parsePath(p) {
     var extname = path.extname(p);
@@ -26,42 +32,49 @@ module.exports = function(name, options) {
 
   function combine(file, encoding, next) {
 
-    var filePath = name || path.basename(file.path);
-    if(typeof name === 'function') {
-      var parsedPath = parsePath(file.path);
-      var result = name(parsedPath) || parsedPath;
-      filePath = typeof result === 'string' ? result : result.basename + result.extname;
-    }
-
-    var buffers;
-    if(!combined) {
-      combined = new gutil.File({
-        path: path.join(file.base, filePath),
-        base: file.base,
-        cwd: file.cwd,
-        contents: new Buffer('')
-      });
-      buffers = [combined.contents];
-    } else {
-      buffers = [combined.contents, new Buffer(options.separator || require('os').EOL)];
+    if (!firstFile) {
+      firstFile = file;
+      // Default path to first file basename
+      fileName = name || path.basename(file.path);
+      // Support path as a function
+      if(typeof name === 'function') {
+        var parsedPath = parsePath(file.path);
+        var result = name(parsedPath) || parsedPath;
+        fileName = typeof result === 'string' ? result : result.basename + result.extname;
+      }
+      // Initialize concat
+      concat = new Concat(!!file.sourceMap, fileName, options.sep);
     }
 
     var contents = file.contents;
+    // Support process as a function
     if(typeof options.process === 'function') {
       contents = new Buffer(options.process.call(file, contents.toString()));
+    // Support process as an object fed to gutil.template
     } else if(typeof options.process === 'object')  {
       contents = new Buffer(gutil.template(contents, extend({file: file}, options.process)));
     }
 
-    buffers.push(contents);
-    combined.contents = Buffer.concat(buffers);
+    concat.add(file.relative, contents.toString(), file.sourceMap);
 
     next();
   }
 
   function flush(next) {
     /* jshint validthis:true*/
-    this.push(combined);
+    if (firstFile) {
+
+      var joinedFile = firstFile.clone();
+
+      joinedFile.path = path.join(firstFile.base, fileName);
+      joinedFile.contents = new Buffer(concat.content);
+
+      if (concat.sourceMapping) {
+        joinedFile.sourceMap = JSON.parse(concat.sourceMap);
+      }
+
+      this.push(joinedFile);
+    }
     next();
   }
 
