@@ -7,6 +7,7 @@ var chalk = require('chalk');
 var gutil = require('gulp-util');
 var extend = require('lodash.assign');
 var through = require('through2');
+var multipipe = require('multipipe');
 var PluginError = gutil.PluginError;
 var Concat = require('concat-with-sourcemaps');
 
@@ -61,7 +62,6 @@ module.exports = function(name, config) {
   }
 
   function flush(next) {
-    /* jshint validthis:true*/
     if (firstFile) {
 
       var joinedFile = firstFile.clone();
@@ -73,6 +73,7 @@ module.exports = function(name, config) {
         joinedFile.sourceMap = JSON.parse(concat.sourceMap);
       }
 
+      /* jshint validthis:true */
       this.push(joinedFile);
     }
     next();
@@ -95,3 +96,19 @@ module.exports.footer = function(footer, locals) {
     next(null, file);
   });
 };
+
+function processSource(src) {
+  var eol = require('os').EOL;
+  /* jshint validthis:true */
+  return eol + '// Source: ' + this.relative + eol + src.trim().replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
+}
+
+module.exports.scripts = function(name, options) {
+  var eol = require('os').EOL;
+  return multipipe(
+    module.exports(name, {process: processSource}),
+    module.exports.header(['(function(window, document, undefined) {', eol, '\'use strict\';', eol].join('')),
+    module.exports.footer([eol, eol, '})(window, document);', eol].join(''))
+  );
+};
+

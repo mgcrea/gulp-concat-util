@@ -179,4 +179,42 @@ describe('gulp-concat-util', function() {
 
   });
 
+  describe('scripts()', function() {
+
+    it('should pass through files', function(done) {
+
+      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
+      var fixture2 = new File(extend({contents: new Buffer('"use strict";\nbar();')}, defaults));
+
+      var stream = concat.scripts();
+      stream.on('data', function(newFile){
+        should.exist(newFile);
+        should.exist(newFile.path);
+        should.exist(newFile.relative);
+        should.exist(newFile.contents);
+        should.equal(newFile.contents.toString(), [
+          '(function(window, document, undefined) {',
+          '\'use strict\';',
+          '',
+          '// Source: file.js',
+          'foo();',
+          '',
+          '// Source: file.js',
+          'bar();',
+          '',
+          '})(window, document);',
+          ''
+        ].join(require('os').EOL));
+        newFile.path.should.equal('/tmp/test/fixture/file.js');
+        newFile.relative.should.equal('file.js');
+      });
+      stream.once('end', done);
+      stream.write(fixture);
+      stream.write(fixture2);
+      stream.end();
+
+    });
+
+  });
+
 });
