@@ -2,6 +2,7 @@
 'use strict';
 
 var util = require('util');
+var os = require('os');
 var path = require('path');
 var chalk = require('chalk');
 var gutil = require('gulp-util');
@@ -12,11 +13,11 @@ var PluginError = gutil.PluginError;
 var Concat = require('concat-with-sourcemaps');
 
 var defaults = {
-  sep: require('os').EOL,
+  sep: os.EOL,
   process: false
 };
 
-module.exports = function(name, config) {
+var concat = module.exports = function(name, config) {
 
   var options = extend({}, defaults, config || {});
   var concat, firstFile, fileName;
@@ -66,7 +67,8 @@ module.exports = function(name, config) {
 
       var joinedFile = firstFile.clone();
 
-      joinedFile.path = path.join(firstFile.base, fileName);
+      joinedFile.path = path.join(options.cwd || firstFile.base, fileName);
+      joinedFile.base = options.base || firstFile.base;
       joinedFile.contents = new Buffer(concat.content);
 
       if (concat.sourceMapping) {
@@ -97,18 +99,18 @@ module.exports.footer = function(footer, locals) {
   });
 };
 
-function processSource(src) {
-  var eol = require('os').EOL;
+function processJsSource(src) {
   /* jshint validthis:true */
-  return eol + '// Source: ' + this.relative + eol + src.trim().replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
+  return os.EOL + '// Source: ' + this.relative + os.EOL + src.trim().replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1');
 }
 
 module.exports.scripts = function(name, options) {
-  var eol = require('os').EOL;
+  if(!options) options = {};
+  options.process = processJsSource;
   return multipipe(
-    module.exports(name, {process: processSource}),
-    module.exports.header(['(function(window, document, undefined) {', eol, '\'use strict\';', eol].join('')),
-    module.exports.footer([eol, eol, '})(window, document);', eol].join(''))
+    concat(name, options),
+    concat.header(['(function(window, document, undefined) {', os.EOL, '\'use strict\';', os.EOL].join('')),
+    concat.footer([os.EOL, os.EOL, '})(window, document);', os.EOL].join(''))
   );
 };
 
