@@ -1,220 +1,140 @@
-var pkg = require('../package.json');
-var concat = require('../' + pkg.main);
-var path = require('path');
-var extend = require('lodash.assign');
-var File = require('gulp-util').File;
-var Buffer = require('buffer').Buffer;
+var concat = require('../');
 var should = require('should');
+var path = require('path');
+var assert = require('stream-assert');
+var test = require('./test-stream');
+var File = require('gulp-util').File;
+var gulp = require('gulp');
+var sourcemaps = require('gulp-sourcemaps');
 require('mocha');
 
-describe('gulp-concat-util', function() {
+var fixtures = function (glob) { return path.join(__dirname, 'fixtures', glob); }
 
-  var defaults = {
-    path: '/tmp/test/fixture/file.js',
-    cwd: '/tmp/test/',
-    base: '/tmp/test/fixture/'
-  };
-
-  beforeEach(function() {
-  });
-
-  describe('header()', function() {
-
-    it('should pass through files', function(done) {
-
-      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
-
-      var stream = concat.header();
-      stream.on('data', function(newFile){
-        should.exist(newFile);
-        should.exist(newFile.path);
-        should.exist(newFile.relative);
-        should.exist(newFile.contents);
-        should.equal(newFile.contents.toString(), 'foo();');
-        newFile.path.should.equal('/tmp/test/fixture/file.js');
-        newFile.relative.should.equal('file.js');
-      });
-      stream.once('end', done);
-      stream.write(fixture);
-      stream.end();
-
-    });
-
-    it('should prepend templated content to file', function(done) {
-
-      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
-
-      var stream = concat.header('\'use strict\';\n// <%= file.path %>\n');
-      stream.on('data', function(newFile){
-        should.exist(newFile);
-        should.exist(newFile.path);
-        should.exist(newFile.relative);
-        should.exist(newFile.contents);
-        should.equal(newFile.contents.toString(), '\'use strict\';\n// /tmp/test/fixture/file.js\n' + 'foo();');
-        newFile.path.should.equal('/tmp/test/fixture/file.js');
-        newFile.relative.should.equal('file.js');
-      });
-      stream.once('end', done);
-      stream.write(fixture);
-      stream.end();
-
-    });
-
-  });
-
-  describe('footer()', function() {
-
-    it('should pass through files', function(done) {
-
-      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
-
-      var stream = concat.footer();
-      stream.on('data', function(newFile){
-        should.exist(newFile);
-        should.exist(newFile.path);
-        should.exist(newFile.relative);
-        should.exist(newFile.contents);
-        should.equal(newFile.contents.toString(), 'foo();');
-        newFile.path.should.equal('/tmp/test/fixture/file.js');
-        newFile.relative.should.equal('file.js');
-      });
-      stream.once('end', done);
-      stream.write(fixture);
-      stream.end();
-
-    });
-
-    it('should prepend templated content to file', function(done) {
-
-      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
-
-      var stream = concat.footer('\n// <%= file.path %>\n');
-      stream.on('data', function(newFile){
-        should.exist(newFile);
-        should.exist(newFile.path);
-        should.exist(newFile.relative);
-        should.exist(newFile.contents);
-        should.equal(newFile.contents.toString(), 'foo();' + '\n// /tmp/test/fixture/file.js\n');
-        newFile.path.should.equal('/tmp/test/fixture/file.js');
-        newFile.relative.should.equal('file.js');
-      });
-      stream.once('end', done);
-      stream.write(fixture);
-      stream.end();
-
-    });
-
-  });
-
+describe('gulp-concat', function() {
   describe('concat()', function() {
 
-    it('should pass through files', function(done) {
-
-      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
-
-      var stream = concat();
-      stream.on('data', function(newFile){
-        should.exist(newFile);
-        should.exist(newFile.path);
-        should.exist(newFile.relative);
-        should.exist(newFile.contents);
-        should.equal(newFile.contents.toString(), 'foo();');
-        newFile.path.should.equal('/tmp/test/fixture/file.js');
-        newFile.relative.should.equal('file.js');
-      });
-      stream.once('end', done);
-      stream.write(fixture);
+    it('should ignore null files', function (done) {
+      var stream = concat('test.js');
+      stream
+        .pipe(assert.length(0))
+        .pipe(assert.end(done));
+      stream.write(new File());
       stream.end();
-
     });
 
-    it('should concat file contents', function(done) {
-
-      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
-      var fixture2 = new File(extend({contents: new Buffer('bar();')}, defaults));
-
-      var stream = concat('baz.js');
-      stream.on('data', function(newFile){
-        should.exist(newFile);
-        should.exist(newFile.path);
-        should.exist(newFile.relative);
-        should.exist(newFile.contents);
-        should.equal(newFile.contents.toString(), 'foo();' + require('os').EOL + 'bar();');
-        newFile.path.should.equal('/tmp/test/fixture/baz.js');
-        newFile.relative.should.equal('baz.js');
-      });
-      stream.once('end', done);
-      stream.write(fixture);
-      stream.write(fixture2);
-      stream.end();
-
+    it('should emit error on streamed file', function (done) {
+      gulp.src(fixtures('*'), { buffer: false })
+        .pipe(concat('test.js'))
+        .on('error', function (err) {
+          done();
+        });
     });
 
-    it('should support name as a function', function(done) {
-
-      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
-      var fixture2 = new File(extend({contents: new Buffer('bar();')}, defaults));
-
-      var stream = concat(function(path) {
-        should.exist(path.basename);
-        should.exist(path.dirname);
-        should.exist(path.extname);
-        path.basename = 'qux';
-      });
-      stream.on('data', function(newFile){
-        should.exist(newFile);
-        should.exist(newFile.path);
-        should.exist(newFile.relative);
-        should.exist(newFile.contents);
-        should.equal(newFile.contents.toString(), 'foo();' + require('os').EOL + 'bar();');
-        newFile.path.should.equal('/tmp/test/fixture/qux.js');
-        newFile.relative.should.equal('qux.js');
-      });
-      stream.once('end', done);
-      stream.write(fixture);
-      stream.write(fixture2);
-      stream.end();
-
+    it('should concat one file', function (done) {
+      test('wadap')
+        .pipe(concat('test.js'))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function (d) { d.contents.toString().should.eql('wadap'); }))
+        .pipe(assert.end(done));
     });
 
+    it('should concat multiple files', function (done) {
+      test('wadap', 'doe')
+        .pipe(concat('test.js'))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function (d) { d.contents.toString().should.eql('wadap\ndoe'); }))
+        .pipe(assert.end(done));
+    });
+
+    it('should concatinate buffers', function (done) {
+      test([65, 66], [67, 68], [69, 70])
+        .pipe(concat('test.js'))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function (d) { d.contents.toString().should.eql('AB\nCD\nEF'); }))
+        .pipe(assert.end(done));
+    });
+
+    it('should preserve mode from files', function (done) {
+      test('wadaup')
+        .pipe(concat('test.js'))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function (d) { d.stat.mode.should.eql(0666); }))
+        .pipe(assert.end(done));
+    });
+
+    it('should take path from first file', function (done) {
+      test('wadap', 'doe')
+        .pipe(concat('test.js'))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function (newFile) {
+          var newFilePath = path.resolve(newFile.path);
+          var expectedFilePath = path.resolve('/home/contra/test/test.js');
+          newFilePath.should.equal(expectedFilePath);
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should preserve relative path from files', function (done) {
+      test('wadap', 'doe')
+        .pipe(concat('test.js'))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function (d) { d.relative.should.eql('test.js'); }))
+        .pipe(assert.end(done));
+    });
+
+    it('should support source maps', function (done) {
+      gulp.src(fixtures('*'))
+        .pipe(sourcemaps.init())
+        .pipe(concat('all.js'))
+        .pipe(assert.length(1))
+        .pipe(assert.first(function (d) {
+          d.sourceMap.sources.should.have.length(2);
+          d.sourceMap.file.should.eql('all.js');
+        }))
+        .pipe(assert.end(done));
+    });
+
+    it('should not fail if no files were input', function(done) {
+      var stream = concat('test.js');
+      stream.end();
+      done();
+    });
+
+    describe('options', function () {
+      it('should support newLine', function (done) {
+        test('wadap', 'doe')
+          .pipe(concat('test.js', {newLine: '\r\n'}))
+          .pipe(assert.length(1))
+          .pipe(assert.first(function (d) { d.contents.toString().should.eql('wadap\r\ndoe'); }))
+          .pipe(assert.end(done));
+      });
+
+      it('should support empty newLine', function (done) {
+        test('wadap', 'doe')
+          .pipe(concat('test.js', {newLine: ''}))
+          .pipe(assert.length(1))
+          .pipe(assert.first(function (d) { d.contents.toString().should.eql('wadapdoe'); }))
+          .pipe(assert.end(done));
+      });
+    });
+
+    describe('with object as argument', function () {
+
+      it('should create file based on path property', function (done) {
+        test('wadap')
+          .pipe(concat({path: 'new.txt'}))
+          .pipe(assert.length(1))
+          .pipe(assert.first(function (d) { path.basename(d.path).should.eql('new.txt'); }))
+          .pipe(assert.end(done));
+      });
+
+      // it('should calculate relative path from cwd and path in arguments', function (done) {
+      //   test('wadap')
+      //     .pipe(concat({cwd: '/home/contra', path: '/home/contra/test/new.txt'}))
+      //     .pipe(assert.length(1))
+      //     .pipe(assert.first(function (d) { console.log(d.relative); d.relative.should.eql('test/new.txt'); }))
+      //     .pipe(assert.end(done));
+      // });
+    });
   });
-
-  describe('scripts()', function() {
-
-    it('should pass through files', function(done) {
-
-      var fixture = new File(extend({contents: new Buffer('foo();')}, defaults));
-      var fixture2 = new File(extend({contents: new Buffer('"use strict";\nbar();')}, defaults));
-
-      var stream = concat.scripts();
-      stream.on('data', function(newFile){
-        should.exist(newFile);
-        should.exist(newFile.path);
-        should.exist(newFile.relative);
-        should.exist(newFile.contents);
-        should.equal(newFile.contents.toString(), [
-          '(function(window, document, undefined) {',
-          '\'use strict\';',
-          '',
-          '// Source: file.js',
-          'foo();',
-          '',
-          '// Source: file.js',
-          'bar();',
-          '',
-          '})(window, document);',
-          ''
-        ].join(require('os').EOL));
-        newFile.path.should.equal('/tmp/test/fixture/file.js');
-        newFile.relative.should.equal('file.js');
-      });
-      stream.once('end', done);
-      stream.write(fixture);
-      stream.write(fixture2);
-      stream.end();
-
-    });
-
-  });
-
 });
