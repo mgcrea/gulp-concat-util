@@ -2,6 +2,9 @@
 
 > Gulp task to concat, prepend, append or transform files.
 
+This implementation is relatively closes to the original [gulp-concat](https://github.com/wearefractal/gulp-concat) plugin.
+
+However this plugin provides `.header()`, `.footer()` & `.scripts()` helpers, and provides a passthrough option used in complex build worflow.
 
 ## Getting Started
 
@@ -48,13 +51,31 @@ gulp.task('concat:dist', function() {
 });
 ```
 
+Alternatively, you can use the bundled helper to concatenate scripts
+
+```javascript
+var concat = require('gulp-concat-util');
+
+gulp.task('concat:dist', function() {
+  gulp.src('scripts/{,*/}*.js')
+    .pipe(concat.scripts(pkg.name + '.js')
+    .pipe(gulp.dest('dist'));
+});
+```
+
 
 ## Options
 
-#### separator (String)
+#### sep (String)
 
 - Separator to use between concatenated files.
 - Default: `require('os').EOL`
+- Alias: `newLine`
+
+#### passthrough (Boolean)
+
+- `Boolean` - Whether initial files should pass through
+- Default: `false`
 
 #### process (Boolean/Function)
 
