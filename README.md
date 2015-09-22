@@ -30,7 +30,7 @@ var concat = require('gulp-concat-util');
 
 gulp.task('concat:dist', function() {
   gulp.src('scripts/{,*/}*.js')
-    .pipe(concat('combined.js')
+    .pipe(concat('combined.js'))
     .pipe(concat.header('// file: <%= file.path %>\n'))
     .pipe(concat.footer('\n// end\n'))
     .pipe(gulp.dest('dist'));
@@ -58,7 +58,7 @@ var concat = require('gulp-concat-util');
 
 gulp.task('concat:dist', function() {
   gulp.src('scripts/{,*/}*.js')
-    .pipe(concat.scripts(pkg.name + '.js')
+    .pipe(concat.scripts(pkg.name + '.js'))
     .pipe(gulp.dest('dist'));
 });
 ```
