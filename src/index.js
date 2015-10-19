@@ -139,7 +139,7 @@ function processJsSource(src) {
 module.exports.scripts = function(name, options) {
   if(!options) options = {};
   options.process = processJsSource;
-  return combine(
+  return combine.obj(
     concat(name, options),
     gulpif(function(file) { return file.__concat; }, concat.header(['(function(window, document, undefined) {', os.EOL, '\'use strict\';', os.EOL].join(''))),
     gulpif(function(file) { return file.__concat; }, concat.footer([os.EOL, os.EOL, '})(window, document);', os.EOL].join('')))
