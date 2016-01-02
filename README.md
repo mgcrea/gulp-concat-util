@@ -10,7 +10,7 @@ However this plugin provides `.header()`, `.footer()` & `.scripts()` helpers, an
 
 This plugin requires Gulp `^3.0.0`
 
-If you haven't used [Gulp](http://gulpjs.com/) before, be sure to check out the [Getting Started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md) guide, as it explains how to create a [Gulpfile](https://github.com/gulpjs/gulp/blob/master/docs/API.md) as well as install and use Gulp plugins. Once you're familiar with that process, you may install this plugin with this command:
+If you haven't used [Gulp](http://gulpjs.com/) before, be sure to check out the [Getting Started](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md) guide, as it explains how to create a [Gulpfile](https://github.com/gulpjs/gulp/blob/master/docs/API.md) as well as install and use Gulp plugins. Once you're familiar with that , you may install this plugin with this command:
 
 ```shell
 npm install gulp-concat-util --save-dev
@@ -44,7 +44,10 @@ var concat = require('gulp-concat-util');
 
 gulp.task('concat:dist', function() {
   gulp.src('scripts/{,*/}*.js')
-    .pipe(concat(pkg.name + '.js', {process: function(src) { return (src.trim() + '\n').replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1'); }}))
+    .pipe(concat(pkg.name + '.js', {process: function(src, filePath) { 
+      // if you need the filename, example `myFileJs.js`, path.basename( filePath, '.js' )
+      return (src.trim() + '\n').replace(/(^|\n)[ \t]*('use strict'|"use strict");?\s*/g, '$1'); 
+    }}))
     .pipe(concat.header('(function(window, document, undefined) {\n\'use strict\';\n'))
     .pipe(concat.footer('\n})(window, document);\n'))
     .pipe(gulp.dest('dist'));
