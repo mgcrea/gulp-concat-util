@@ -78,7 +78,7 @@ var concat = module.exports = function(name, config) {
     var contents = file.contents;
     // Support process as a function
     if(typeof options.process === 'function') {
-      contents = new Buffer(options.process.call(file, contents.toString()));
+      contents = new Buffer(options.process.call(file, contents.toString(), file.path));
     // Support process as an object fed to gutil.template
     } else if(typeof options.process === 'object')  {
       contents = new Buffer(gutil.template(contents, extend({file: file}, options.process)));
